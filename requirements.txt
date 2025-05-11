@@ -1,0 +1,11 @@
+faiss-cpu==1.11.0
+fastapi==0.115.12
+pip-chill==1.0.3
+pymupdf4llm==0.0.24
+python-dotenv==1.1.0
+python-multipart==0.0.20
+uvicorn==0.34.2
+langchain-openai==0.3.16
+langchain-experimental==0.3.4
+unstructured==0.17.2
+markdown==3.8
