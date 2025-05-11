@@ -1,10 +1,10 @@
 from typing import List, Dict, Any
 import os
 from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from rag_stack.prompt_templates import QnA_prompt
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 
 class QueryProcessor:
     """
@@ -17,10 +17,6 @@ class QueryProcessor:
             self.model_name = os.getenv('OPENAI_EMBEDDING_MODEL') or "text-embedding-ada-002"
             self.embedding_model = OpenAIEmbeddings(model=self.model_name)
             self.llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
-        if llm == "claude":
-            self.model_name = os.getenv('CLAUDE_EMBEDDING_MODEL') or "voyage-3"
-            self.embedding_model = ""
-            self.llm = ""
     
     async def retreive_context(self, user_query: str, top_k: int):
         try:
@@ -32,12 +28,16 @@ class QueryProcessor:
             print('➡ Error in retreive_context:', e)
             raise e
         
-    async def generate_response(self, query: str, context):
+    async def generate_response(self, query: str, context, llm: str):
         """ Generate a response using LLM based on user query and context """
         prompt = ChatPromptTemplate.from_messages(QnA_prompt)
 
-        chain = prompt | self.llm
+        if llm == "openai": 
+            llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+        elif llm == "claude":
+            llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2)
 
+        chain = prompt | llm
         llm_response = await chain.ainvoke({
             "question": query,
             "context": context

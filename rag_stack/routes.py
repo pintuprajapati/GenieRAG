@@ -8,7 +8,6 @@ from rag_stack.document_processing import DocumentProcessor
 from rag_stack.chunking import TextChunker
 from rag_stack.vector_storage import VectorStore
 from rag_stack.query import QueryProcessor
-from rag_stack.models import ChatRequest
 
 document_processor = DocumentProcessor()
 document_chunker = TextChunker()
@@ -52,23 +51,25 @@ async def upload_document(file: UploadFile = File(...)):
         if vector_status:
             document_info['vector_status'] = "Chunks have been stored to the vector db"
 
-        return create_response(message="Document is being processed. Please wait..", status_code=200, success=True, data=document_info)
+        return create_response(message="Document has been processed.", status_code=200, success=True, data=document_info)
     except Exception as e:
         return create_response(message="Something went wrong while uploading a document", status_code=500, success=False, data={})
 
 @router.get("/query",  response_model=Dict[str, Any])
-async def query_documents(request: ChatRequest):
+async def query_documents(query: str, top_k: int = 5, llm: str = "openai"):
     """Query the document database"""
     try:
-        get_relevant_docs = await query_processor.retreive_context(request.query, request.top_k)
-        response = await query_processor.generate_response(request.query, get_relevant_docs)
+        get_relevant_docs = await query_processor.retreive_context(query, top_k)
+        response = await query_processor.generate_response(query, get_relevant_docs, llm)
         
         result_data = {
-            "query": request.query,
+            "query": query,
+            "llm_used": llm,
             "llm_response": response,
-            "results": get_relevant_docs
+            "context": get_relevant_docs
         } 
         
         return create_response(message="Result fetched successfully", status_code=200, success=True, data=result_data)
     except Exception as e:
+        print("➡ Error in query_documents: ", e)
         return create_response(message="Something went wrong while getting answer for the query:", status_code=500, success=False, data={str(e)})

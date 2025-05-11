@@ -3,6 +3,9 @@ from fastapi.responses import JSONResponse
 import os
 import shutil
 from urllib.parse import urlparse
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_anthropic import ChatAnthropic
+from langchain_voyageai import VoyageAIEmbeddings
 
 # General JSON response to return in API response
 def create_response(message: str, status_code: int, success: bool = False, **kwargs):
@@ -40,3 +43,19 @@ def delete_local_file_dir(path):
     return True
   except Exception as e:
     return False
+
+def get_llm_details(llm):
+  try:
+    if llm == "openai":
+        model_name = os.getenv('OPENAI_EMBEDDING_MODEL') or "text-embedding-ada-002"
+        embedding_model = OpenAIEmbeddings(model=model_name)
+        llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+    elif llm == "claude":
+        model_name = os.getenv('CLAUDE_EMBEDDING_MODEL') or "voyage-3"
+        embedding_model = VoyageAIEmbeddings(model=model_name, voyage_api_key=os.getenv('VOYAGE_API_KEY'))
+        llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2)
+        
+    return model_name, embedding_model, llm
+  except Exception as e:
+    print('➡ Error in get_llm_details:', e)
+    raise e
